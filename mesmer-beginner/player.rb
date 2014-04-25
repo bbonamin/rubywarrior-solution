@@ -6,7 +6,7 @@ class Player
     init_collaborators(warrior)
  
     catch :turn_done do
-      if @barbarian.feel.empty? 
+      if @barbarian.safe_ahead? 
         @barbarian.ensure_healthy
         @barbarian.walk!
       else
@@ -29,7 +29,7 @@ class Barbarian < SimpleDelegator
   end
   
   def ensure_healthy
-    if health_below_safe_threshold? and feel.empty? and not(taking_damage?)
+    if health_below_safe_threshold? and safe_ahead? and not(taking_damage?)
       rest!
     end
   end
@@ -50,6 +50,12 @@ class Barbarian < SimpleDelegator
     end
   end 
   
+  def safe_ahead?
+    feel.empty?
+  end
+ 
+  # A little magic that automatically ends the turn after a 
+  # rubywarrior action 
   def method_missing(method, *args, &block)
     results = super
     if method.to_s[-1] == '!'
