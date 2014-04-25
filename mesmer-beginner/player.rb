@@ -1,29 +1,28 @@
 require 'delegate'
+require 'singleton'
+
 class Player
   def play_turn(warrior)
-    @health ||= Health.new
-    @barbarian = Barbarian.from_warrior(warrior)
-    @barbarian.health_collaborator = @health
+    init_collaborators(warrior)
  
     catch :turn_done do
       if @barbarian.feel.empty? 
         @barbarian.ensure_healthy
         @barbarian.walk!
       else
-        @barbarian.smart_attack!
+        @barbarian.mercyful_attack!
       end
     end
-    @health.previous = @barbarian.health
+    Health.instance.last_recorded = @barbarian.health
   end
-
-    def retreat(warrior)
-    warrior.walk! :backward
+  
+  def init_collaborators(warrior)
+    @barbarian = Barbarian.from_warrior(warrior)
   end
 end
 
 # Enhanced Warrior
 class Barbarian < SimpleDelegator
-  attr_accessor :health_collaborator
 
   def self.from_warrior(warrior)
     new(warrior)
@@ -41,14 +40,10 @@ class Barbarian < SimpleDelegator
   end
  
   def taking_damage?
-    if health < health_collaborator.previous
-      true
-    else
-      puts 'Not taking damage'
-    end
+    health < Health.instance.last_recorded
   end
 
-  def smart_attack!
+  def mercyful_attack!
     if feel.captive?
       rescue!
     else
@@ -58,5 +53,6 @@ class Barbarian < SimpleDelegator
 end
 
 class Health
-  attr_accessor :previous
+  include Singleton
+  attr_accessor :last_recorded
 end
