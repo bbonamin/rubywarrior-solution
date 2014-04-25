@@ -31,7 +31,6 @@ class Barbarian < SimpleDelegator
   def ensure_healthy
     if health_below_safe_threshold? and feel.empty? and not(taking_damage?)
       rest!
-      throw :turn_done
     end
   end
   
@@ -50,6 +49,15 @@ class Barbarian < SimpleDelegator
       attack!
     end
   end 
+  
+  def method_missing(method, *args, &block)
+    results = super
+    if method.to_s[-1] == '!'
+      throw :turn_done 
+    else
+      results
+    end
+  end
 end
 
 class Health
