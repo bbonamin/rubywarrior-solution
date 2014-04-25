@@ -6,12 +6,7 @@ class Player
     init_collaborators(warrior)
  
     catch :turn_done do
-      if @barbarian.safe_ahead? 
-        @barbarian.ensure_healthy
-        @barbarian.walk!
-      else
-        @barbarian.mercyful_attack!
-      end
+      @barbarian.perform!
     end
     Health.instance.last_recorded = @barbarian.health
   end
@@ -27,7 +22,16 @@ class Barbarian < SimpleDelegator
   def self.from_warrior(warrior)
     new(warrior)
   end
-  
+ 
+  def perform!
+    if safe_ahead? 
+      ensure_healthy
+      walk!
+    else
+      mercyful_attack!
+    end
+  end
+ 
   def ensure_healthy
     if health_below_safe_threshold? and safe_ahead? and not(taking_damage?)
       rest!
