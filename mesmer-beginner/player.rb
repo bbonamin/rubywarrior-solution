@@ -19,7 +19,6 @@ end
 
 # Enhanced Warrior
 class Barbarian < SimpleDelegator
-
   def self.from_warrior(warrior)
     new(warrior)
   end
@@ -27,6 +26,7 @@ class Barbarian < SimpleDelegator
   def perform!
     if safe_ahead? 
       ensure_healthy
+      rescue_captives_behind unless $behind_captive_saved
       walk!
     else
       mercyful_attack!
@@ -42,7 +42,15 @@ class Barbarian < SimpleDelegator
       end
     end
   end
- 
+  
+  def rescue_captives_behind
+    if feel(:backward).empty?
+      walk!(:backward)
+    else
+      $behind_captive_saved = true
+      rescue!(:backward)
+    end 
+  end 
   def retreat!
     walk!(:backward)
   end
