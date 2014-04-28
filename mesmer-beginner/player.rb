@@ -13,6 +13,7 @@ class Player
   
   def init_collaborators(warrior)
     @barbarian = Barbarian.from_warrior(warrior)
+    Health.instance.last_recorded ||= @barbarian.health
   end
 end
 
@@ -33,15 +34,18 @@ class Barbarian < SimpleDelegator
   end
  
   def ensure_healthy
-    if health_below_safe_threshold? and safe_ahead? and not(taking_damage?)
-      rest!
+    if Health.instance.below_confortable_limit? and safe_ahead? 
+      if taking_damage? and Health.instance.below_critical_limit?
+        retreat!
+      else
+        rest!
+      end
     end
   end
-  
-  def health_below_safe_threshold?
-    health < 15
-  end
  
+  def retreat!
+    walk!(:backward)
+  end
   def taking_damage?
     health < Health.instance.last_recorded
   end
@@ -73,4 +77,17 @@ end
 class Health
   include Singleton
   attr_accessor :last_recorded
+  
+  CRITICAL_LIMIT = 10
+  CONFORTABLE_LIMIT = 15
+ 
+  def below_critical_limit?
+    last_recorded < CRITICAL_LIMIT
+  end
+ 
+  def below_confortable_limit?
+    last_recorded < CONFORTABLE_LIMIT
+  end
+ 
+
 end
