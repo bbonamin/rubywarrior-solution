@@ -24,6 +24,7 @@ class Barbarian < SimpleDelegator
   end
  
   def perform!
+    rotate_if_facing_wall!
     if safe_ahead? 
       ensure_healthy
       rescue_captives_behind unless $behind_captive_saved
@@ -32,7 +33,11 @@ class Barbarian < SimpleDelegator
       mercyful_attack!
     end
   end
- 
+
+  def rotate_if_facing_wall!
+    pivot! if feel.wall?
+  end
+  
   def ensure_healthy
     if Health.instance.below_confortable_limit? and safe_ahead? 
       if taking_damage? and Health.instance.below_critical_limit?
