@@ -19,12 +19,15 @@ end
 
 # Enhanced Warrior
 class Barbarian < SimpleDelegator
+  attr_accessor :closest_enemies
+
   def self.from_warrior(warrior)
     new(warrior)
   end
  
   def perform!
     rotate_if_facing_wall!
+    evaluate_surroundings
     if safe_ahead? 
       ensure_healthy
       try_ranged!
@@ -34,14 +37,27 @@ class Barbarian < SimpleDelegator
       mercyful_attack!
     end
   end
+  
+  def evaluate_surroundings
+    self.closest_enemies = {
+      forward: look.find_index{|s| s.enemy?}, 
+      backward: look(:backward).find_index{|s| s.enemy?}
+    }
+  end 
 
   def try_ranged!
-   whats_ahead = look
-   whats_ahead_initial_encounter = whats_ahead.detect {|s| not(s.empty?) }
-   return if whats_ahead_initial_encounter and whats_ahead_initial_encounter.captive?
-    
-   shoot! if whats_ahead.any? {|s| s.enemy? } 
+    pivot! if closest_enemy_behind 
+    initial_encounter = look.detect {|s| not(s.empty?) }
+    return if initial_encounter && initial_encounter.captive?
+    shoot! if look.any? {|s| s.enemy? } 
   end
+  
+  def closest_enemy_behind
+    puts "Behind: #{closest_enemies[:backward]}, Front: #{closest_enemies[:forward]}"
+    closest_enemies[:backward] and closest_enemies[:forward] and
+    closest_enemies[:backward] > closest_enemies[:forward] 
+  end
+
   def rotate_if_facing_wall!
     pivot! if feel.wall?
   end
@@ -100,7 +116,7 @@ class Health
   attr_accessor :last_recorded
   
   CRITICAL_LIMIT = 10
-  CONFORTABLE_LIMIT = 15
+  CONFORTABLE_LIMIT = 12
  
   def below_critical_limit?
     last_recorded < CRITICAL_LIMIT
