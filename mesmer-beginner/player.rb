@@ -27,6 +27,7 @@ class Barbarian < SimpleDelegator
     rotate_if_facing_wall!
     if safe_ahead? 
       ensure_healthy
+      try_ranged!
       rescue_captives_behind unless $behind_captive_saved
       walk!
     else
@@ -34,6 +35,13 @@ class Barbarian < SimpleDelegator
     end
   end
 
+  def try_ranged!
+   whats_ahead = look
+   whats_ahead_initial_encounter = whats_ahead.detect {|s| not(s.empty?) }
+   return if whats_ahead_initial_encounter and whats_ahead_initial_encounter.captive?
+    
+   shoot! if whats_ahead.any? {|s| s.enemy? } 
+  end
   def rotate_if_facing_wall!
     pivot! if feel.wall?
   end
