@@ -51,12 +51,17 @@ class Barbarian < SimpleDelegator
   def smart_attack!
     maybe_attack_closest_unbound_enemy!
     maybe_attack_closest_bound_enemy!
-    maybe_rescue_closest_captive!
+    maybe_rescue_closest_captives!
   end
   
   def maybe_attack_closest_unbound_enemy!
     closest_unbound_enemy_direction = DIRECTIONS.detect {|d| feel(d).enemy?}
-    attack!(closest_unbound_enemy_direction) if closest_unbound_enemy_direction 
+    if closest_unbound_enemy_direction 
+      attack!(closest_unbound_enemy_direction) 
+    else
+      nearby_enemy_direction = listen.detect {|d| d.enemy? }
+      walk!(direction_of(nearby_enemy_direction)) if nearby_enemy_direction
+    end
   end
 
   def maybe_attack_closest_bound_enemy!
@@ -64,13 +69,19 @@ class Barbarian < SimpleDelegator
     attack!(closest_bound_enemy_direction) if closest_bound_enemy_direction
   end
   
-  def maybe_rescue_closest_captive!
+  def maybe_rescue_closest_captives!
     closest_captive_direction = DIRECTIONS.detect {|d| feel(d).captive? and feel(d).character == 'C'}
-    rescue!(closest_captive_direction) if closest_captive_direction
+    if closest_captive_direction
+      rescue!(closest_captive_direction)
+    else
+      nearby_captive_direction = listen.detect {|d| d.captive? and d.character == 'C'}
+      walk!(direction_of(nearby_captive_direction)) if nearby_captive_direction
+    end 
   end
   
   def others_around_me?
-    others = DIRECTIONS.select {|d| feel(d).captive? or feel(d).enemy? }
+    #others = DIRECTIONS.select {|d| feel(d).captive? or feel(d).enemy? }
+    others = listen.select {|d| d.captive? or d.enemy? } 
     others.count > 0
   end
   
