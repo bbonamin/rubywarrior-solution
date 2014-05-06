@@ -86,15 +86,18 @@ class Barbarian < SimpleDelegator
                       elsif looking_for == :captive
                         listen.detect {|space| space.non_hostile_captive? }
                       end
-      if nearby_target
-        if feel(direction_of(nearby_target)).stairs?
-          nearby_target = feel(DIRECTIONS.detect {|d| not(feel(d).stairs?) })
-        end
-        walk!(direction_of(nearby_target))
-      end
+      walk_to_target_avoiding_stairs!(nearby_target)
     end
   end
-  
+ 
+  def walk_to_target_avoiding_stairs!(target)
+    return unless target
+    if feel(direction_of(target)).stairs?
+      target = feel(DIRECTIONS.detect {|d| not(feel(d).stairs?) })
+    end
+    walk!(direction_of(target))
+  end
+ 
   def others_around_me?
     others = listen.select {|d| d.captive? or d.enemy? } 
     others.count > 0
