@@ -62,14 +62,14 @@ class Barbarian < SimpleDelegator
   end
 
   def maybe_attack_closest_bound_enemy!
-    closest_bound_enemy_direction = DIRECTIONS.detect {|d| feel(d).captive? and not(feel(d).character == 'C') }
+    closest_bound_enemy_direction = DIRECTIONS.detect {|d| feel(d).bound_enemy? }
     approaching_nearby_target(closest_bound_enemy_direction, :bound_enemy) do |direction|
       attack!(direction) 
     end
   end
   
   def maybe_rescue_closest_captives!
-    closest_captive_direction = DIRECTIONS.detect {|d| feel(d).captive? and feel(d).character == 'C'}
+    closest_captive_direction = DIRECTIONS.detect {|d| feel(d).non_hostile_captive? }
     approaching_nearby_target(closest_captive_direction, :captive) do |direction|
       rescue!(direction)
     end 
@@ -82,9 +82,9 @@ class Barbarian < SimpleDelegator
       nearby_target = if looking_for == :enemy
                         listen.detect {|d| d.enemy? }
                       elsif looking_for == :bound_enemy
-                        listen.detect {|d| d.captive? and not(d.character == 'C') }
+                        listen.detect {|d| d.bound_enemy? }
                       elsif looking_for == :captive
-                        listen.detect {|d| d.captive? and d.character == 'C'}
+                        listen.detect {|d| d.non_hostile_captive? }
                       end
       nearby_target and walk!(direction_of(nearby_target))
     end
@@ -135,3 +135,12 @@ class Health
   end
 end
 
+class RubyWarrior::Space
+  def bound_enemy?
+    captive? and not(character == 'C')
+  end
+
+  def non_hostile_captive?
+    captive? and character == 'C'
+  end
+end
