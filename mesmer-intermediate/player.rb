@@ -80,13 +80,18 @@ class Barbarian < SimpleDelegator
       yield(direction)
     else
       nearby_target = if looking_for == :enemy
-                        listen.detect {|d| d.enemy? }
+                        listen.detect {|space| space.enemy? }
                       elsif looking_for == :bound_enemy
-                        listen.detect {|d| d.bound_enemy? }
+                        listen.detect {|space| space.bound_enemy? }
                       elsif looking_for == :captive
-                        listen.detect {|d| d.non_hostile_captive? }
+                        listen.detect {|space| space.non_hostile_captive? }
                       end
-      nearby_target and walk!(direction_of(nearby_target))
+      if nearby_target
+        if feel(direction_of(nearby_target)).stairs?
+          nearby_target = feel(DIRECTIONS.detect {|d| not(feel(d).stairs?) })
+        end
+        walk!(direction_of(nearby_target))
+      end
     end
   end
   
