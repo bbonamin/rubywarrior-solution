@@ -12,7 +12,7 @@ end
 # Enhanced warrior
 class Barbarian < SimpleDelegator
   DIRECTIONS = [:forward, :left, :right, :backward]
-  attr_accessor :safe
+  
   def perform!
     catch :turn_done do
       ensure_healthy_status
@@ -56,31 +56,41 @@ class Barbarian < SimpleDelegator
   
   def maybe_attack_closest_unbound_enemy!
     closest_unbound_enemy_direction = DIRECTIONS.detect {|d| feel(d).enemy?}
-    if closest_unbound_enemy_direction 
+    approaching_nearby_target(closest_unbound_enemy_direction, :enemy) do |direction|
       attack!(closest_unbound_enemy_direction) 
-    else
-      nearby_enemy_direction = listen.detect {|d| d.enemy? }
-      walk!(direction_of(nearby_enemy_direction)) if nearby_enemy_direction
     end
   end
 
   def maybe_attack_closest_bound_enemy!
     closest_bound_enemy_direction = DIRECTIONS.detect {|d| feel(d).captive? and not(feel(d).character == 'C') }
-    attack!(closest_bound_enemy_direction) if closest_bound_enemy_direction
+    approaching_nearby_target(closest_bound_enemy_direction, :bound_enemy) do |direction|
+      attack!(direction) 
+    end
   end
   
   def maybe_rescue_closest_captives!
     closest_captive_direction = DIRECTIONS.detect {|d| feel(d).captive? and feel(d).character == 'C'}
-    if closest_captive_direction
-      rescue!(closest_captive_direction)
-    else
-      nearby_captive_direction = listen.detect {|d| d.captive? and d.character == 'C'}
-      walk!(direction_of(nearby_captive_direction)) if nearby_captive_direction
+    approaching_nearby_target(closest_captive_direction, :captive) do |direction|
+      rescue!(direction)
     end 
   end
   
+  def approaching_nearby_target(direction, looking_for)
+    if direction
+      yield(direction)
+    else
+      nearby_target = if looking_for == :enemy
+                        listen.detect {|d| d.enemy? }
+                      elsif looking_for == :bound_enemy
+                        listen.detect {|d| d.captive? and not(d.character == 'C') }
+                      elsif looking_for == :captive
+                        listen.detect {|d| d.captive? and d.character == 'C'}
+                      end
+      nearby_target and walk!(direction_of(nearby_target))
+    end
+  end
+  
   def others_around_me?
-    #others = DIRECTIONS.select {|d| feel(d).captive? or feel(d).enemy? }
     others = listen.select {|d| d.captive? or d.enemy? } 
     others.count > 0
   end
